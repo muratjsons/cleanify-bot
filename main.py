@@ -20,7 +20,7 @@ logging.basicConfig(
 
 # API ayarları
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "7674873613:AAFCYlXSGcSkDqPILPRi02ZG9pOY3Z_2sts")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "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")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "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")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # qa.json dosyasını yükle
