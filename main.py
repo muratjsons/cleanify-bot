@@ -96,4 +96,51 @@ async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response = openai_client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "You are a friendly and casual assistant for the Cleanify platform. Respond to casual greetings or questions in English with a polite, conversational tone, avoiding generic platform descriptions. Engage directly with the user's greeting or question (e.g.
+                    {"role": "system", "content": "You are a friendly and casual assistant for the Cleanify platform. Respond to casual greetings or questions in English with a polite, conversational tone, avoiding generic platform descriptions. Engage directly with the user's greeting or question (e.g., 'Hi!' or 'How are you?') and subtly steer towards Cleanify-related topics like cleanup efforts or B3TR tokens. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
+                    {"role": "user", "content": user_message}
+                ],
+                max_tokens=150
+            )
+            cleaned_text = response.choices[0].message.content.strip()
+            await update.message.reply_text(cleaned_text)
+            logging.info(f"Replied to casual message: {user_message} with: {cleaned_text}")
+            return
+
+        answer = match_question(user_message)
+        if answer:
+            await update.message.reply_text(answer)
+            logging.info(f"Replied to: {user_message} with FAQ answer: {answer}")
+            return
+
+        if not is_cleanify_related(user_message):
+            await update.message.reply_text("I can only respond to questions related to Cleanify. What would you like to know about Cleanify?")
+            logging.info(f"Non-Cleanify message detected: {user_message}")
+            return
+
+        logging.info(f"No FAQ match for: {user_message}, querying OpenAI...")
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a text-refining bot for the Cleanify platform. Rewrite the user’s message to be more fluent, polite, and professional in English. Provide detailed guidance for specific questions like organizing events or earning tokens. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=200
+        )
+        cleaned_text = response.choices[0].message.content.strip()
+        await update.message.reply_text(cleaned_text)
+        logging.info(f"Replied to: {user_message} with OpenAI response: {cleaned_text}")
+
+    except Exception as e:
+        error_message = str(e).replace(OPENAI_API_KEY, '****').replace(TELEGRAM_TOKEN, '****')
+        logging.error(f"An error occurred while processing {user_message}: {error_message}")
+        await update.message.reply_text("An error occurred while processing your request. Please try again later or contact the admin.")
+
+def main():
+    logging.info("Bot is starting...")
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(CommandHandler("cleanify", cleanify))
+    logging.info("Bot handlers are set.")
+    app.run_polling(timeout=30)
+
+if __name__ == "__main__":
+    main()
