@@ -3,7 +3,6 @@ import re
 import logging
 import asyncio
 import os
-import difflib
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -31,8 +30,8 @@ def load_qa_json():
         with open("qa.json", "r", encoding="utf-8") as f:
             data = json.load(f)
             logging.info("qa.json loaded successfully")
-            if not data:
-                logging.warning("QA_DATA is empty!")
+            if not data or not data.get("questions"):
+                logging.warning("QA_DATA or questions is empty!")
             return data
     except FileNotFoundError:
         logging.error("qa.json file not found")
@@ -60,43 +59,38 @@ def match_question(user_input):
     if QA_DATA is None:
         logging.error("QA_DATA is None")
         return None
-    if not QA_DATA:
-        logging.error("QA_DATA is empty")
+    if not QA_DATA or not QA_DATA.get("questions"):
+        logging.error("QA_DATA or questions is empty")
         return None
 
     best_match = None
-    best_score = 0.0
-    threshold = 0.6  # Eşleşme skoru için eşik değeri (%60 benzerlik)
+    best_keyword_count = 0
 
-    for question, answer in QA_DATA.items():
-        cleaned_question = re.sub(r'[^\w\s]', '', question.lower().strip())
-        # difflib ile benzerlik skoru hesapla
-        similarity_score = difflib.SequenceMatcher(None, cleaned_input, cleaned_question).ratio()
-        logging.info(f"Comparing '{cleaned_input}' with '{cleaned_question}' - Similarity score: {similarity_score}")
+    for question_set in QA_DATA["questions"]:
+        # Varyasyonlarla tam eşleşme kontrolü
+        for variation in question_set["variations"]:
+            cleaned_variation = re.sub(r'[^\w\s]', '', variation.lower().strip())
+            logging.info(f"Checking '{cleaned_input}' against variation '{cleaned_variation}'")
+            if cleaned_input == cleaned_variation:
+                logging.info(f"Exact match found for: {cleaned_input}")
+                return question_set["answer"]
 
-        if similarity_score > best_score:
-            best_score = similarity_score
-            best_match = (question, answer)
+        # Anahtar kelimelerle eşleşme kontrolü
+        keyword_count = sum(1 for keyword in question_set["keywords"] if keyword in cleaned_input)
+        logging.info(f"Checking keywords for {question_set['id']}: {keyword_count} keywords matched in '{cleaned_input}'")
+        if keyword_count > best_keyword_count:
+            best_keyword_count = keyword_count
+            best_match = question_set["answer"]
 
-        # Tam eşleşme kontrolü
-        if cleaned_input == cleaned_question:
-            logging.info(f"Exact match found for: {cleaned_input}")
-            return answer
-        # Kısmi eşleşme kontrolü (eski yöntem, yedek)
-        if any(keyword in cleaned_input for keyword in cleaned_question.split()):
-            logging.info(f"Partial match found for: {cleaned_input} with question: {cleaned_question}")
-            return answer
-
-    # En iyi eşleşme skoru eşiğin üzerindeyse, en iyi eşleşmeyi döndür
-    if best_score >= threshold and best_match:
-        logging.info(f"Best match found for: {cleaned_input} with question: {best_match[0]} (score: {best_score})")
-        return best_match[1]
+    if best_match and best_keyword_count > 0:
+        logging.info(f"Best match found for: {cleaned_input} with {best_keyword_count} keyword matches")
+        return best_match
 
     logging.info(f"No match found for: {cleaned_input}")
     return None
 
 def is_cleanify_related(user_input):
-    cleanify_keywords = ["cleanify", "b3tr", "cleanup", "environmental", "tokens", "reward", "organize", "event", "group"]
+    cleanify_keywords = ["cleanify", "b3tr", "cleanup", "environmental", "tokens", "reward", "organize", "event", "group", "campaign"]
     cleaned_input = user_input.lower().strip().replace("/cleanify", "").strip()
     return any(keyword in cleaned_input for keyword in cleanify_keywords)
 
@@ -104,10 +98,9 @@ def is_casual_message(user_input):
     cleaned_input = user_input.lower().strip().replace("/cleanify", "").strip()
     if any(cleaned_input == msg for msg in CASUAL_MESSAGES):
         return True
-        return any(msg in cleaned_input for msg in CASUAL_MESSAGES)
+    return any(msg in cleaned_input for msg in CASUAL_MESSAGES)
 
-async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_message = " ".join(context.args) if context.args else ""
+async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):user_message = " ".join(context.args) if context.args else ""
     if not user_message:
         await update.message.reply_text("Please provide a message after /cleanify. Example: /cleanify What is Cleanify?")
         return
