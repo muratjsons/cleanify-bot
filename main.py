@@ -18,7 +18,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# API ayarları (sabit anahtarlar kaldırılarak sadece ortam değişkeni kullanılıyor)
+# API ayarları
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
@@ -37,27 +37,40 @@ def load_qa_json():
             print("Loaded QA_DATA:", data)
             if not data:
                 print("Warning: QA_DATA is empty!")
+                logging.warning("QA_DATA is empty!")
             return data
     except FileNotFoundError:
         logging.error("qa.json file not found")
         print("qa.json file not found")
-        return {}
+        return None
     except json.JSONDecodeError as e:
         logging.error(f"JSON decode error in qa.json: {e}")
         print(f"JSON decode error in qa.json: {e}")
-        return {}
+        return None
     except Exception as e:
         logging.error(f"Error loading qa.json: {e}")
         print(f"Error loading qa.json: {e}")
-        return {}
+        return None
 
 QA_DATA = load_qa_json()
 
+# Günlük konuşma mesajlarını tespit etmek için genişletilmiş liste
+CASUAL_MESSAGES = [
+    "hi", "hello", "hey", "how are you", "good morning", "good afternoon", 
+    "good evening", "good night", "goodnight", "bye", "see you", "how’s it going",
+    "what’s up", "how you doing", "howdy", "greetings", "hey there", "hola",
+    "ciao", "salut", "yo", "what's good", "take care", "catch you later",
+    "see ya", "later", "night", "morning", "evening", "afternoon", "cheers",
+    "thanks", "thank you", "nice to meet you", "how’s your day", "have a nice day"
+]
+
 # Soru eşleştirme fonksiyonu
 def match_question(user_input):
-    print("User input:", user_input)
     cleaned_input = re.sub(r'[^\w\s]', '', user_input.lower().strip().replace("/cleanify", "").strip())
     print("Cleaned input:", cleaned_input)
+    if QA_DATA is None:
+        print("Error: QA_DATA could not be loaded!")
+        return None
     if not QA_DATA:
         print("Error: QA_DATA is empty!")
         return None
@@ -70,6 +83,17 @@ def match_question(user_input):
     print("No match found")
     return None
 
+# Cleanify ile ilgili olup olmadığını kontrol eden fonksiyon
+def is_cleanify_related(user_input):
+    cleanify_keywords = ["cleanify", "b3tr", "cleanup", "environmental", "tokens", "reward"]
+    cleaned_input = user_input.lower().strip().replace("/cleanify", "").strip()
+    return any(keyword in cleaned_input for keyword in cleanify_keywords)
+
+# Günlük konuşma mesajı mı kontrol eden fonksiyon
+def is_casual_message(user_input):
+    cleaned_input = user_input.lower().strip().replace("/cleanify", "").strip()
+    return any(msg in cleaned_input for msg in CASUAL_MESSAGES)
+
 # /cleanify komutu
 async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = " ".join(context.args) if context.args else ""
@@ -78,26 +102,59 @@ async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        answer = match_question(user_message)
-        if answer:
-            await update.message.reply_text(answer)
-            logging.info(f"Replied to: {user_message}")
-        else:
+        # qa.json dosyasının yüklenip yüklenmediğini kontrol et
+        if QA_DATA is None:
+            await update.message.reply_text("Sorry, I couldn't load the FAQ data.Please try again later or contact the admin.")
+            logging.error("Failed to load QA_DATA for user request")
+            return
+
+        # Günlük konuşma mesajı mı kontrol et
+        if is_casual_message(user_message):
+            logging.info(f"Casual message detected: {user_message}")
             response = openai_client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "You are a text-refining bot for the Cleanify platform. Rewrite the user’s message to be more fluent, polite, and professional. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
+                    {"role": "system", "content": "You are a friendly and casual assistant for the Cleanify platform. Respond to casual greetings in English with a polite and conversational tone, and steer the conversation towards Cleanify-related topics. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
                     {"role": "user", "content": user_message}
                 ],
                 max_tokens=150
             )
             cleaned_text = response.choices[0].message.content.strip()
             await update.message.reply_text(cleaned_text)
+            logging.info(f"Replied to casual message: {user_message} with: {cleaned_text}")
+            return
+
+        # FAQ kontrolü
+        answer = match_question(user_message)
+        if answer:
+            await update.message.reply_text(answer)
+            logging.info(f"Replied to: {user_message} with FAQ answer: {answer}")
+            return
+
+        # Cleanify ile ilgili mi kontrol et
+        if not is_cleanify_related(user_message):
+            await update.message.reply_text("I can only respond to questions related to Cleanify. What would you like to know about Cleanify?")
+            logging.info(f"Non-Cleanify message detected: {user_message}")
+            return
+
+        # OpenAI ile metni düzenle
+        logging.info(f"No FAQ match for: {user_message}, querying OpenAI...")
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a text-refining bot for the Cleanify platform. Rewrite the user’s message to be more fluent, polite, and professional in English. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=150
+        )
+        cleaned_text = response.choices[0].message.content.strip()
+        await update.message.reply_text(cleaned_text)
+        logging.info(f"Replied to: {user_message} with OpenAI response: {cleaned_text}")
+
     except Exception as e:
-        # Anahtarı loglarda gizlemek için maskele
         error_message = str(e).replace(OPENAI_API_KEY, '****').replace(TELEGRAM_TOKEN, '****')
-        logging.error(f"An error occurred: {error_message}")
-        await update.message.reply_text("An error occurred. Please contact the admin.")
+        logging.error(f"An error occurred while processing {user_message}: {error_message}")
+        await update.message.reply_text("An error occurred while processing your request. Please try again later or contact the admin.")
 
 # Botu başlat
 def main():
