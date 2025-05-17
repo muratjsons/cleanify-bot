@@ -1,5 +1,56 @@
 {
-    "what is cleanify": "Cleanify is a cutting-edge platform designed to empower individuals, communities, and NGOs to track their environmental cleanup efforts and contribute to a sustainable future. Built on blockchain technology, Cleanify ensures transparent tracking of activities like litter collection, waste management, and daily cleanups, making your impact measurable. You can earn B3TR tokens for your efforts, which integrate with VeBetterDAO, allowing you to vote on sustainability initiatives and engage in community governance. Through partnerships with BCG and global NGOs, Cleanify amplifies cleanup movements worldwide, proving every action counts. Whether organizing group events or logging daily actions, Cleanify makes it simple for everyone to help the planet.",
-    "how can i earn rewards with cleanify": "Earning rewards with Cleanify is straightforward and rewarding. Simply log your environmental efforts—such as picking up litter, managing waste, or completing daily cleanup tasks—and earn B3TR tokens for each action. Whether you’re cleaning streets solo or hosting group events, every contribution counts. With Cleanify’s VeBetterDAO integration, you can use your tokens to vote on sustainability projects, unlocking more rewards and shaping the platform’s future. All rewards are tracked transparently via blockchain, so you can see the real difference you’re making.",
-    "how can i organize group cleanup events with cleanify": "Hosting group cleanup events with Cleanify is easy and impactful. Use the platform to set up events anywhere—a park, beach, or your neighborhood. Participants join, collect litter, and log their efforts, earning B3TR tokens for their contributions. Cleanify tracks everything transparently using blockchain, ensuring every action is recognized. Need help? Submit an English support ticket at https://cleanify-support.freshdesk.com/support/tickets/new with the required details. The Cleanify team aims to respond within 48 hours, so please avoid opening multiple tickets for the same issue."
+  "questions": [
+    {
+      "id": "about",
+      "variations": [
+        "what is cleanify",
+        "what is cleanify about",
+        "tell me about cleanify"
+      ],
+      "keywords": [
+        "what",
+        "about",
+        "cleanify"
+      ],
+      "answer": "Cleanify is a cutting-edge platform designed to empower individuals, communities, and NGOs to track their environmental cleanup efforts and contribute to a sustainable future. Built on blockchain technology, Cleanify ensures transparent tracking of activities like litter collection, waste management, and daily cleanups, making your impact measurable. You can earn B3TR tokens for your efforts, which integrate with VeBetterDAO, allowing you to vote on sustainability initiatives and engage in community governance. Through partnerships with BCG and global NGOs, Cleanify amplifies cleanup movements worldwide, proving every action counts. Whether organizing group events or logging daily actions, Cleanify makes it simple for everyone to help the planet."
+    },
+    {
+      "id": "earn",
+      "variations": [
+        "how can i earn rewards with cleanify",
+        "how to earn rewards on cleanify",
+        "how do i get b3tr tokens",
+        "how to earn b3tr tokens"
+      ],
+      "keywords": [
+        "how",
+        "earn",
+        "rewards",
+        "b3tr",
+        "tokens"
+      ],
+      "answer": "Earning rewards with Cleanify is straightforward and rewarding. Simply log your environmental efforts—such as picking up litter, managing waste, or completing daily cleanup tasks—and earn B3TR tokens for each action. Whether you’re cleaning streets solo or hosting group events, every contribution counts. With Cleanify’s VeBetterDAO integration, you can use your tokens to vote on sustainability projects, unlocking more rewards and shaping the platform’s future. All rewards are tracked transparently via blockchain, so you can see the real difference you’re making."
+    },
+    {
+      "id": "organize",
+      "variations": [
+        "how can i organize group cleanup events with cleanify",
+        "how do i set up a group cleanup on cleanify",
+        "organizing a cleanup event with cleanify how",
+        "how to create campaign",
+        "how to start a cleanup campaign with cleanify"
+      ],
+      "keywords": [
+        "how",
+        "organize",
+        "group",
+        "cleanup",
+        "event",
+        "set up",
+        "create",
+        "campaign"
+      ],
+      "answer": "Hosting group cleanup events with Cleanify is easy and impactful. Use the platform to set up events anywhere—a park, beach, or your neighborhood. Participants join, collect litter, and log their efforts, earning B3TR tokens for their contributions. Cleanify tracks everything transparently using blockchain, ensuring every action is recognized. Need help? Submit an English support ticket at https://cleanify-support.freshdesk.com/support/tickets/new with the required details. The Cleanify team aims to respond within 48 hours, so please avoid opening multiple tickets for the same issue."
+    }
+  ]
 }
