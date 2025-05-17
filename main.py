@@ -18,9 +18,13 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# API ayarları
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "7674873613:AAFCYlXSGcSkDqPILPRi02ZG9pOY3Z_2sts")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "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")
+# API ayarları (sabit anahtarlar kaldırılarak sadece ortam değişkeni kullanılıyor)
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
+    logging.error("TELEGRAM_TOKEN or OPENAI_API_KEY environment variables are not set!")
+    raise ValueError("TELEGRAM_TOKEN or OPENAI_API_KEY environment variables are not set!")
+
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # qa.json dosyasını yükle
@@ -28,8 +32,8 @@ def load_qa_json():
     try:
         print("Attempting to load qa.json...")
         with open("qa.json", "r", encoding="utf-8") as f:
-            logging.info("qa.json loaded successfully")
             data = json.load(f)
+            logging.info("qa.json loaded successfully")
             print("Loaded QA_DATA:", data)
             if not data:
                 print("Warning: QA_DATA is empty!")
@@ -90,9 +94,10 @@ async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
             cleaned_text = response.choices[0].message.content.strip()
             await update.message.reply_text(cleaned_text)
     except Exception as e:
-        error_message = f"An error occurred: {str(e)}"
-        logging.error(error_message)
-        await update.message.reply_text(error_message)
+        # Anahtarı loglarda gizlemek için maskele
+        error_message = str(e).replace(OPENAI_API_KEY, '****').replace(TELEGRAM_TOKEN, '****')
+        logging.error(f"An error occurred: {error_message}")
+        await update.message.reply_text("An error occurred. Please contact the admin.")
 
 # Botu başlat
 def main():
