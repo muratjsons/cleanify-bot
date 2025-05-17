@@ -88,7 +88,8 @@ async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         answer = match_question(user_message)
         if answer:
-            await update.message.reply_text(answer)return
+            await update.message.reply_text(answer)
+            return
 
         if not is_cleanify_related(user_message):
             await update.message.reply_text("I can only respond to questions related to Cleanify. What would you like to know about Cleanify?")
