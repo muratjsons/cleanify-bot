@@ -77,34 +77,40 @@ def match_question(user_input):
     for question, answer in QA_DATA.items():
         cleaned_question = re.sub(r'[^\w\s]', '', question.lower().strip())
         print(f"Checking: {cleaned_question}")
+        if cleaned_input == cleaned_question:
+            print(f"Exact match found for: {question}")
+            return answer
         if any(keyword in cleaned_input for keyword in cleaned_question.split()):
-            print(f"Match found for: {question}")
+            print(f"Partial match found for: {question}")
             return answer
     print("No match found")
     return None
 
 # Cleanify ile ilgili olup olmadığını kontrol eden fonksiyon
 def is_cleanify_related(user_input):
-    cleanify_keywords = ["cleanify", "b3tr", "cleanup", "environmental", "tokens", "reward"]
+    cleanify_keywords = ["cleanify", "b3tr", "cleanup", "environmental", "tokens", "reward", "organize", "event", "group"]
     cleaned_input = user_input.lower().strip().replace("/cleanify", "").strip()
     return any(keyword in cleaned_input for keyword in cleanify_keywords)
 
-# Günlük konuşma mesajı mı kontrol eden fonksiyon
+# Günlük konuşma mesajı mı kontrol eden fonksiyon (tam eşleşme eklendi)
 def is_casual_message(user_input):
     cleaned_input = user_input.lower().strip().replace("/cleanify", "").strip()
+    # Tam eşleşme kontrolü
+    if any(cleaned_input == msg for msg in CASUAL_MESSAGES):
+        return True
+    # Kelime bazlı kontrol (yedek)
     return any(msg in cleaned_input for msg in CASUAL_MESSAGES)
 
 # /cleanify komutu
 async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = " ".join(context.args) if context.args else ""
-    if not user_message:
-        await update.message.reply_text("Please provide a message after /cleanify. Example: /cleanify What is Cleanify?")
+    if not user_message:await update.message.reply_text("Please provide a message after /cleanify. Example: /cleanify What is Cleanify?")
         return
 
     try:
         # qa.json dosyasının yüklenip yüklenmediğini kontrol et
         if QA_DATA is None:
-            await update.message.reply_text("Sorry, I couldn't load the FAQ data.Please try again later or contact the admin.")
+            await update.message.reply_text("Sorry, I couldn't load the FAQ data. Please try again later or contact the admin.")
             logging.error("Failed to load QA_DATA for user request")
             return
 
@@ -114,7 +120,7 @@ async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response = openai_client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
-                    {"role": "system", "content": "You are a friendly and casual assistant for the Cleanify platform. Respond to casual greetings in English with a polite and conversational tone, and steer the conversation towards Cleanify-related topics. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
+                    {"role": "system", "content": "You are a friendly and casual assistant for the Cleanify platform. Respond to casual greetings or questions in English with a polite, conversational tone, avoiding generic platform descriptions. Engage directly with the user's greeting or question (e.g., 'Hi!' or 'How are you?') and subtly steer towards Cleanify-related topics like cleanup efforts or B3TR tokens. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
                     {"role": "user", "content": user_message}
                 ],
                 max_tokens=150
@@ -142,10 +148,10 @@ async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a text-refining bot for the Cleanify platform. Rewrite the user’s message to be more fluent, polite, and professional in English. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
+                {"role": "system", "content": "You are a text-refining bot for the Cleanify platform. Rewrite the user’s message to be more fluent, polite, and professional in English. Provide detailed guidance for specific questions like organizing events or earning tokens. Cleanify is a platform that helps track environmental cleanup efforts and rewards users with B3TR tokens."},
                 {"role": "user", "content": user_message}
             ],
-            max_tokens=150
+            max_tokens=200
         )
         cleaned_text = response.choices[0].message.content.strip()
         await update.message.reply_text(cleaned_text)
