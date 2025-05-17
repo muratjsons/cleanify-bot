@@ -101,8 +101,7 @@ def is_casual_message(user_input):
     return any(msg in cleaned_input for msg in CASUAL_MESSAGES)
 
 async def cleanify(update: Update, context: ContextTypes.DEFAULT_TYPE):user_message = " ".join(context.args) if context.args else ""
-    if not user_message:
-        await update.message.reply_text("Please provide a message after /cleanify. Example: /cleanify What is Cleanify?")
+    if not user_message: await update.message.reply_text("Please provide a message after /cleanify. Example: /cleanify What is Cleanify?")
         return
 
     try:
